@@ -5,8 +5,11 @@
 #include <sys/ioctl.h>
 #include <linux/videodev2.h>
 #include <opencv2/opencv.hpp>
+#include <opencv2/core.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/highgui.hpp>
 #include <iostream>
-
+#include <windows.h>
 
 #define VIDEO_OUT "/dev/video4" 
 #define VIDEO_IN  "/dev/video0" 
@@ -16,64 +19,53 @@
 
 
 int main ( int argc, char **argv ) {
-       cv::VideoCapture cap;
-       struct v4l2_format vid_format;
-       size_t framesize = WIDTH * HEIGHT * 3;
-       int fd = 0;
+    struct v4l2_format vid_format;
+    size_t framesize = WIDTH * HEIGHT * 1.5;
+    int fd = 0;
 
-        // if( cap.open ( VIDEO_IN ) ) {
-        //    cap.set ( cv::CAP_PROP_FRAME_WIDTH , WIDTH  );
-        //    cap.set ( cv::CAP_PROP_FRAME_HEIGHT, HEIGHT );
-        // } else {
-        //    std::cout << "Unable to open video input!" << std::endl;
-        // }
-        cap.set ( cv::CAP_PROP_FRAME_WIDTH , WIDTH  );
-        cap.set ( cv::CAP_PROP_FRAME_HEIGHT, HEIGHT );
-        if ( (fd = open ( VIDEO_OUT, O_RDWR )) == -1 )
-            printf ("Unable to open video output!");
+    if ( (fd = open ( VIDEO_OUT, O_RDWR )) == -1 )
+        printf ("Unable to open video output!");
 
-        memset ( &vid_format, 0, sizeof(vid_format) );
-        vid_format.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
+    memset ( &vid_format, 0, sizeof(vid_format) );
+    vid_format.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
 
-        if ( ioctl ( fd, VIDIOC_G_FMT, &vid_format ) == -1 )
-            printf ( "Unable to get video format data. Errro: %d\n", errno );
+    if ( ioctl ( fd, VIDIOC_G_FMT, &vid_format ) == -1 )
+        printf ( "Unable to get video format data. Errro: %d\n", errno );
 
-        vid_format.fmt.pix.width       = cap.get ( CV_CAP_PROP_FRAME_WIDTH  );
-        vid_format.fmt.pix.height      = cap.get ( CV_CAP_PROP_FRAME_HEIGHT );
-        vid_format.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24;
-        vid_format.fmt.pix.sizeimage   = framesize;
-        vid_format.fmt.pix.field       = V4L2_FIELD_NONE;
+    vid_format.fmt.pix.width       = WIDTH;
+    vid_format.fmt.pix.height      = HEIGHT;
+    vid_format.fmt.pix.sizeimage   = framesize;
+    vid_format.fmt.pix.field       = V4L2_FIELD_NONE;
+    vid_format.fmt.pix.pixelformat = V4L2_PIX_FMT_YUV420;
 
-        if ( ioctl ( fd, VIDIOC_S_FMT, &vid_format ) == -1 )
-            printf ( "Unable to set video format! Errno: %d\n", errno );
+    if ( ioctl ( fd, VIDIOC_S_FMT, &vid_format ) == -1 )
+        printf ( "Unable to set video format! Errno: %d\n", errno );
 
-        cv::Mat frame ( cap.get(CV_CAP_PROP_FRAME_HEIGHT), 
-        cap.get(CV_CAP_PROP_FRAME_WIDTH), CV_8UC3 );
-        cv::Mat frameROI;
-        cv::Mat thermal = cv::imread("test1.jpg", 0);
-        printf ( "Please open the virtual video device (/dev/video<x>) e.g. with VLC\n" );
-        // std::cout << "sample starts" << VIDEO_IN << std::endl;
-        while (1) {
-
-            cv::cvtColor ( frame, frame, cv::COLOR_BGR2GRAY );
-            // frame = thermal;
-            // cv::cvtColor ( thermal, thermal, cv::COLOR_GRAY2RGB );
-            for (int row = 0; row < frame.rows; row++)
-            {
-                for (int col = 0; col < frame.cols; col++) 
-                {
-                    // frame.at<cv::Vec3b>(row, col)[0] = thermal.at<cv::Vec3b>(row, col)[0];
-                    // frame.at<cv::Vec3b>(row, col)[1] = thermal.at<cv::Vec3b>(row, col)[1];
-                    // frame.at<cv::Vec3b>(row, col)[2] = thermal.at<cv::Vec3b>(row, col)[2];
-                    frame.at<uchar>(row,col) = thermal.at<uchar>(row,col);;
-                }
-            }
-            cv::cvtColor ( frame, frame, cv::COLOR_GRAY2BGR );
-
-            write ( fd, frame.data, framesize );
-
-            std::cout << "%s" << maxstr << std::endl;
+    cv::Mat frame ( HEIGHT, WIDTH, CV_8UC3 );
+    cv::Mat frameROI;
+    cv::Mat scene = cv::imread("scene00082.jpg", 0);
+    std::vector<String> str; 
+    
+    cv::Mat thermal = cv::imread("scene00082", 0);
+    cv::glob("./image/", str, false);
+    
+    int cnt = 0;
+    printf ( "Please open the virtual video device (/dev/video<x>) e.g. with VLC\n" );
+    // std::cout << "sample starts" << VIDEO_IN << std::endl;
+    while (1) {
+        if i(cnt > str.size)
+        {
+            i = 0;
         }
+        
+        thermal = cv::imread(str[cnt]);
+        cv::cvtColor ( thermal, frame, cv::COLOR_GRAY2RGB );
+        cv::cvtColor ( frame, frame, cv::COLOR_RGB2YUV_IYUV);
+
+        write ( fd, frame.data, framesize );
+        Sleep(33);
+        i = i + 1;
+    }
 }
 // g++ -ggdb `pkg-config --cflags --libs opencv` sample.cpp -o sample
 // ffmpeg -fflags nobuffer -probesize 256 -rtsp_transport tcp -i rtsp://127.0.0.1:8554/h264 -vframes 1  -r 1 -s 640x360 -y /dev/shm/snapshot.jpg /dev/video1
@@ -108,4 +100,4 @@ int main ( int argc, char **argv ) {
 //             }
 
 
-// g++ -ggdb `pkg-config --cflags --libs opencv` sample2.cpp -o sample2
+// g++ -ggdb `pkg-config --cflags --libs opencv` sample2.cpp -o sample2 
