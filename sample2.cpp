@@ -9,13 +9,13 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
 #include <iostream>
-#include <windows.h>
+#include <string>
 
 #define VIDEO_OUT "/dev/video4" 
 #define VIDEO_IN  "/dev/video0" 
 
-#define WIDTH  640
-#define HEIGHT 480
+#define WIDTH  1280
+#define HEIGHT 1024
 
 
 int main ( int argc, char **argv ) {
@@ -44,7 +44,7 @@ int main ( int argc, char **argv ) {
     cv::Mat frame ( HEIGHT, WIDTH, CV_8UC3 );
     cv::Mat frameROI;
     cv::Mat scene = cv::imread("scene00001.jpg", 0);
-    std::vector<String> str; 
+    std::vector<cv::String> str; 
     
     cv::Mat thermal = cv::imread("scene00001.jpg", 0);
     cv::glob("./image/", str, false);
@@ -53,13 +53,13 @@ int main ( int argc, char **argv ) {
     printf ( "Please open the virtual video device (/dev/video<x>) e.g. with VLC\n" );
     // std::cout << "sample starts" << VIDEO_IN << std::endl;
     while (1) {
-        if (cnt > str.size)
+        if (cnt > str.size())
         {
             cnt = 0;
         }
         
-        thermal = cv::imread(str[cnt]);
-        cv::cvtColor ( thermal, frame, cv::COLOR_GRAY2RGB );
+        frame = cv::imread(str[cnt]);
+        // cv::cvtColor ( thermal, frame, cv::COLOR_GRAY2RGB );
 
         write ( fd, frame.data, framesize );
         usleep(33333);
